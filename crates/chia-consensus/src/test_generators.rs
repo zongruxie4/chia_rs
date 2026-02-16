@@ -125,7 +125,7 @@ pub(crate) fn print_conditions(a: &Allocator, c: &SpendBundleConditions, a2: &Al
     ret += &format!("condition-cost: {}\n", c.condition_cost);
     ret += &format!("removal_amount: {}\n", c.removal_amount);
     ret += &format!("addition_amount: {}\n", c.addition_amount);
-    ret += &format!("atoms: {}\n", a2.atom_count() + a2.small_atom_count());
+    ret += &format!("atoms: {}\n", a2.atom_count());
     ret += &format!("pairs: {}\n", a2.pair_count());
     ret += &format!("heap: {}\n", a2.heap_size());
     ret

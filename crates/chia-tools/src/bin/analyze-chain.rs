@@ -114,16 +114,18 @@ fn main() {
                     .write_fmt(format_args!(
                         "{height} \
                     atoms: {} \
-                    small_atoms: {} \
+                    allocated_atoms: {} \
                     pairs: {} \
+                    allocated_pairs: {} \
                     heap: {} \
                     block_cost: {} \
                     execute_time: {} \
                     timestamp: {} \
                     \n",
                         a.atom_count(),
-                        a.small_atom_count(),
+                        a.allocated_atom_count(),
                         a.pair_count(),
+                        a.allocated_pair_count(),
                         a.heap_size(),
                         ti.cost,
                         execute_timing.as_micros(),
