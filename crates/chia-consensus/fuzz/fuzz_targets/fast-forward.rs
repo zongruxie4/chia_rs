@@ -5,6 +5,7 @@ use chia_consensus::conditions::{
 };
 use chia_consensus::consensus_constants::TEST_CONSTANTS;
 use chia_consensus::fast_forward::fast_forward_singleton;
+use chia_consensus::flags::ConsensusFlags;
 use chia_consensus::spend_visitor::SpendVisitor;
 use chia_consensus::validation_error::{ErrorCode, ValidationErr};
 use chia_protocol::Bytes32;
@@ -16,7 +17,7 @@ use clvmr::serde::{node_from_bytes, node_to_bytes};
 use clvmr::{Allocator, NodePtr};
 use libfuzzer_sys::{Corpus, fuzz_target};
 
-use clvmr::chia_dialect::ChiaDialect;
+use clvmr::chia_dialect::{ChiaDialect, ClvmFlags};
 use clvmr::reduction::Reduction;
 use clvmr::run_program::run_program;
 use std::sync::Arc;
@@ -77,7 +78,7 @@ fn run_puzzle(
     let puzzle = node_from_bytes(a, puzzle)?;
     let solution = node_from_bytes(a, solution)?;
 
-    let dialect = ChiaDialect::new(0);
+    let dialect = ChiaDialect::new(ClvmFlags::empty());
     let max_cost = 11_000_000_000;
     let Reduction(clvm_cost, conditions) = run_program(a, &dialect, puzzle, solution, max_cost)?;
 
@@ -114,7 +115,7 @@ fn run_puzzle(
         &mut state,
         spend,
         conditions,
-        0,
+        ConsensusFlags::empty(),
         &mut cost_left,
         &TEST_CONSTANTS,
         &mut visitor,

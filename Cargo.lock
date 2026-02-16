@@ -368,6 +368,7 @@ dependencies = [
 name = "chia-consensus"
 version = "0.37.0"
 dependencies = [
+ "bitflags",
  "blocking-threadpool",
  "chia-bls 0.37.0",
  "chia-protocol",

@@ -1,5 +1,6 @@
 #![no_main]
 use chia_bls::Signature;
+use chia_consensus::flags::ConsensusFlags;
 use chia_consensus::{
     build_compressed_block::BlockBuilder, consensus_constants::TEST_CONSTANTS,
     run_block_generator::get_coinspends_for_trusted_block,
@@ -29,8 +30,13 @@ fuzz_target!(|spends: Vec<CoinSpend>| -> Corpus {
         return Corpus::Reject;
     };
     let gen_prog = &Program::new(generator.into());
-    let mut result = get_coinspends_for_trusted_block(&TEST_CONSTANTS, gen_prog, &vec![&[]], 0)
-        .expect("get_coinspends_for_trusted_block");
+    let mut result = get_coinspends_for_trusted_block(
+        &TEST_CONSTANTS,
+        gen_prog,
+        &vec![&[]],
+        ConsensusFlags::empty(),
+    )
+    .expect("get_coinspends_for_trusted_block");
 
     assert_eq!(spends.len(), result.len());
 
