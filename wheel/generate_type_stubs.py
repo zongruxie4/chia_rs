@@ -541,6 +541,8 @@ def validate_proof_v2(plot_id: bytes32, size: int, challenge: bytes32, plot_stre
 
 def solve_proof(fragments: PartialProof, plot_id: bytes32, strength: int, k: int) -> bytes: ...
 
+def quality_string_from_proof(plot_id: bytes32, size: int, plot_strength: int, proof: bytes) -> Optional[bytes32]: ...
+
 """)
 
     print_class(

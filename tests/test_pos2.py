@@ -10,6 +10,7 @@ from chia_rs import (
     Prover,
     compute_plot_id_v2,
     create_v2_plot,
+    quality_string_from_proof,
     solve_proof,
     validate_proof_v2,
 )
@@ -88,6 +89,10 @@ def test_plot_roundtrip(
             quality = validate_proof_v2(plot_id, k, challenge, strength, full_proof)
             assert quality is not None
             assert quality == pp.get_string(uint8(strength))
+
+            qs_bytes = quality_string_from_proof(plot_id, k, strength, full_proof)
+            assert qs_bytes is not None
+            assert qs_bytes == bytes(quality)
             # Same format as quality-string-tests/*.txt (7 lines, fixed order, with field comments)
             print(challenge.hex(), "  # challenge")
             print(strength, "  # strength")
