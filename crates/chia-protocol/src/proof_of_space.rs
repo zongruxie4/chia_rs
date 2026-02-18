@@ -159,21 +159,15 @@ impl ProofOfSpace {
 
         let k_size = (self.proof.len() * 8 / 128) as u8;
         let plot_id = self.compute_plot_id().to_bytes();
-        chia_pos2::validate_proof_v2(
-            &plot_id,
-            k_size,
-            &self.challenge.to_bytes(),
-            self.strength,
-            self.proof.as_slice(),
-        )
-        .map(|quality| {
-            let mut sha256 = Sha256::new();
-            sha256.update(chia_pos2::serialize_quality(
-                &quality.chain_links,
-                self.strength,
-            ));
-            sha256.finalize().into()
-        })
+        chia_pos2::quality_string_from_proof(&plot_id, k_size, self.strength, self.proof.as_slice())
+            .map(|quality| {
+                let mut sha256 = Sha256::new();
+                sha256.update(chia_pos2::serialize_quality(
+                    &quality.chain_links,
+                    self.strength,
+                ));
+                sha256.finalize().into()
+            })
     }
 }
 
