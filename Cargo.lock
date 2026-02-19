@@ -197,9 +197,9 @@ dependencies = [
 
 [[package]]
 name = "bitflags"
-version = "2.6.0"
+version = "2.11.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "b048fb63fd8b5923fc5aa7b340d8e156aec7ec02f0c78fa8a6ddc2613f6f71de"
+checksum = "843867be96c8daad0d758b57df9392b6d8d271134fce549de6ce169ff98a92af"
 
 [[package]]
 name = "bitvec"
@@ -368,6 +368,7 @@ dependencies = [
 name = "chia-consensus"
 version = "0.37.0"
 dependencies = [
+ "bitflags",
  "blocking-threadpool",
  "chia-bls 0.37.0",
  "chia-protocol",
@@ -789,9 +790,9 @@ dependencies = [
 
 [[package]]
 name = "clvm-fuzzing"
-version = "0.16.5"
+version = "0.17.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "8398b5f4de5ef770392cacd104be700ca8a5cb4d0b648f793726065780432f1e"
+checksum = "5299206365e0f6d328151054de9a605b987c94a471a075b11db5eb57ad86c831"
 dependencies = [
  "anyhow",
  "arbitrary",
@@ -850,10 +851,11 @@ dependencies = [
 
 [[package]]
 name = "clvmr"
-version = "0.16.5"
+version = "0.17.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "38e8c8c0529b627891e9f007f30af2b931260a7eee6a6e1a8f55ba7a4ad6105a"
+checksum = "25934dffcee8ac6b2c213173c2b762f73ba4831e8d96fa99c9622be268c06836"
 dependencies = [
+ "bitflags",
  "bitvec",
  "bumpalo",
  "chia-bls 0.28.1",

@@ -5,7 +5,7 @@ use crate::conditions::{
     validate_conditions, validate_signature,
 };
 use crate::consensus_constants::ConsensusConstants;
-use crate::flags::{DONT_VALIDATE_SIGNATURE, SIMPLE_GENERATOR};
+use crate::flags::ConsensusFlags;
 use crate::opcodes::{
     AGG_SIG_AMOUNT, AGG_SIG_ME, AGG_SIG_PARENT, AGG_SIG_PARENT_AMOUNT, AGG_SIG_PARENT_PUZZLE,
     AGG_SIG_PUZZLE, AGG_SIG_PUZZLE_AMOUNT, AGG_SIG_UNSAFE, CREATE_COIN,
@@ -43,14 +43,14 @@ pub fn subtract_cost(
 pub fn setup_generator_args<GenBuf: AsRef<[u8]>, I: IntoIterator<Item = GenBuf>>(
     a: &mut Allocator,
     block_refs: I,
-    flags: u32,
+    flags: ConsensusFlags,
 ) -> Result<NodePtr, ValidationErr>
 where
     <I as IntoIterator>::IntoIter: DoubleEndedIterator,
 {
     // once we have soft-forked in requiring simple generators, we no longer
     // need to pass in the deserialization program
-    if (flags & SIMPLE_GENERATOR) != 0 {
+    if flags.contains(ConsensusFlags::SIMPLE_GENERATOR) {
         if block_refs.into_iter().next().is_some() {
             return Err(ValidationErr(a.nil(), ErrorCode::TooManyGeneratorRefs));
         }
@@ -92,7 +92,7 @@ pub fn run_block_generator<GenBuf: AsRef<[u8]>, I: IntoIterator<Item = GenBuf>>(
     program: &[u8],
     block_refs: I,
     max_cost: u64,
-    flags: u32,
+    flags: ConsensusFlags,
     signature: &Signature,
     bls_cache: Option<&BlsCache>,
     constants: &ConsensusConstants,
@@ -124,7 +124,7 @@ where
     let args = a.new_pair(args, a.nil())?;
     let args = a.new_pair(program, args)?;
 
-    let dialect = ChiaDialect::new(flags);
+    let dialect = ChiaDialect::new(flags.to_clvm_flags());
     let Reduction(clvm_cost, generator_output) =
         run_program(a, &dialect, rom_generator, args, cost_left)?;
 
@@ -176,9 +176,9 @@ fn extract_n<const N: usize>(
 pub fn check_generator_quote(
     a: &Allocator,
     program: &[u8],
-    flags: u32,
+    flags: ConsensusFlags,
 ) -> Result<(), ValidationErr> {
-    if flags & SIMPLE_GENERATOR == 0 || program.starts_with(&[0xff, 0x01]) {
+    if !flags.contains(ConsensusFlags::SIMPLE_GENERATOR) || program.starts_with(&[0xff, 0x01]) {
         Ok(())
     } else {
         Err(ValidationErr(a.nil(), ErrorCode::ComplexGeneratorReceived))
@@ -191,9 +191,9 @@ pub fn check_generator_quote(
 pub fn check_generator_node(
     a: &Allocator,
     program: NodePtr,
-    flags: u32,
+    flags: ConsensusFlags,
 ) -> Result<(), ValidationErr> {
-    if flags & SIMPLE_GENERATOR == 0 {
+    if !flags.contains(ConsensusFlags::SIMPLE_GENERATOR) {
         return Ok(());
     }
     // this expects an atom with a single byte value of 1 as the first value in the list
@@ -215,7 +215,7 @@ pub fn run_block_generator2<GenBuf: AsRef<[u8]>, I: IntoIterator<Item = GenBuf>>
     program: &[u8],
     block_refs: I,
     max_cost: u64,
-    flags: u32,
+    flags: ConsensusFlags,
     signature: &Signature,
     bls_cache: Option<&BlsCache>,
     constants: &ConsensusConstants,
@@ -233,7 +233,7 @@ where
     check_generator_node(a, program, flags)?;
 
     let args = setup_generator_args(a, block_refs, flags)?;
-    let dialect = ChiaDialect::new(flags);
+    let dialect = ChiaDialect::new(flags.to_clvm_flags());
 
     let Reduction(clvm_cost, all_spends) = run_program(a, &dialect, program, args, cost_left)?;
 
@@ -297,7 +297,7 @@ where
 
     validate_conditions(a, &ret, &state, a.nil(), flags)?;
     validate_signature(&state, signature, flags, bls_cache)?;
-    ret.validated_signature = (flags & DONT_VALIDATE_SIGNATURE) == 0;
+    ret.validated_signature = !flags.contains(ConsensusFlags::DONT_VALIDATE_SIGNATURE);
 
     ret.cost = max_cost - cost_left;
     Ok(ret)
@@ -309,7 +309,7 @@ pub fn get_coinspends_for_trusted_block<GenBuf: AsRef<[u8]>, I: IntoIterator<Ite
     constants: &ConsensusConstants,
     generator: &Program,
     refs: I,
-    flags: u32,
+    flags: ConsensusFlags,
 ) -> Result<Vec<CoinSpend>, ValidationErr>
 where
     <I as IntoIterator>::IntoIter: DoubleEndedIterator,
@@ -321,7 +321,7 @@ where
     let program = node_from_bytes_backrefs(&mut a, generator)?;
     check_generator_node(&a, program, flags)?;
     let args = setup_generator_args(&mut a, refs, flags)?;
-    let dialect = ChiaDialect::new(flags);
+    let dialect = ChiaDialect::new(flags.to_clvm_flags());
 
     let Reduction(_clvm_cost, res) = run_program(
         &mut a,
@@ -408,7 +408,7 @@ pub fn get_coinspends_with_conditions_for_trusted_block<
     constants: &ConsensusConstants,
     generator: &Program,
     refs: I,
-    flags: u32,
+    flags: ConsensusFlags,
 ) -> Result<Vec<(CoinSpend, Vec<(u32, Vec<Vec<u8>>)>)>, ValidationErr>
 where
     <I as IntoIterator>::IntoIter: DoubleEndedIterator,
@@ -420,7 +420,7 @@ where
     let program = node_from_bytes_backrefs(&mut a, generator)?;
     check_generator_node(&a, program, flags)?;
     let args = setup_generator_args(&mut a, refs, flags)?;
-    let dialect = ChiaDialect::new(flags);
+    let dialect = ChiaDialect::new(flags.to_clvm_flags());
 
     let Reduction(_clvm_cost, res) = run_program(
         &mut a,

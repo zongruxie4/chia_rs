@@ -6,10 +6,7 @@ use chia_consensus::allocator::make_allocator;
 use chia_consensus::build_compressed_block::BlockBuilder;
 use chia_consensus::check_time_locks::py_check_time_locks;
 use chia_consensus::consensus_constants::ConsensusConstants;
-use chia_consensus::flags::{
-    COMPUTE_FINGERPRINT, COST_CONDITIONS, DONT_VALIDATE_SIGNATURE, MEMPOOL_MODE, NO_UNKNOWN_CONDS,
-    SIMPLE_GENERATOR, STRICT_ARGS_COUNT,
-};
+use chia_consensus::flags::{ConsensusFlags, MEMPOOL_MODE};
 use chia_consensus::merkle_set::compute_merkle_set_root as compute_merkle_root_impl;
 use chia_consensus::merkle_tree::{MerkleSet, validate_merkle_proof};
 use chia_consensus::owned_conditions::{OwnedSpendBundleConditions, OwnedSpendConditions};
@@ -58,8 +55,6 @@ use chia_protocol::{
 use chia_sha2::Sha256;
 use chia_traits::ChiaToPython;
 use clvm_utils::tree_hash_from_bytes;
-use clvmr::chia_dialect::{CANONICAL_INTS, DISABLE_OP};
-use clvmr::{ENABLE_KECCAK_OPS_OUTSIDE_GUARD, ENABLE_SHA256_TREE, LIMIT_HEAP, NO_UNKNOWN_OPS};
 use pyo3::buffer::PyBuffer;
 use pyo3::exceptions::{PyRuntimeError, PyValueError};
 use pyo3::prelude::*;
@@ -174,9 +169,9 @@ pub fn get_puzzle_and_solution_for_coin<'a>(
     find_parent: Bytes32,
     find_amount: u64,
     find_ph: Bytes32,
-    flags: u32,
+    flags: ConsensusFlags,
 ) -> PyResult<(Bound<'a, PyBytes>, Bound<'a, PyBytes>)> {
-    let mut allocator = make_allocator(LIMIT_HEAP);
+    let mut allocator = make_allocator(ConsensusFlags::LIMIT_HEAP);
 
     let program = py_to_slice::<'a>(program);
     let args = py_to_slice::<'a>(args);
@@ -185,7 +180,7 @@ pub fn get_puzzle_and_solution_for_coin<'a>(
         .map_err(|e| map_pyerr_w_ptr(&e, &allocator))?;
     let args = node_from_bytes_backrefs(&mut allocator, args)
         .map_err(|e| map_pyerr_w_ptr(&e, &allocator))?;
-    let dialect = &ChiaDialect::new(flags);
+    let dialect = &ChiaDialect::new(flags.to_clvm_flags());
 
     let (puzzle, solution) = py
         .detach(|| -> Result<(NodePtr, NodePtr), EvalErr> {
@@ -230,9 +225,9 @@ pub fn get_puzzle_and_solution_for_coin2<'a>(
     block_refs: &Bound<'a, PyList>,
     max_cost: Cost,
     find_coin: &Coin,
-    flags: u32,
+    flags: ConsensusFlags,
 ) -> PyResult<(Program, Program)> {
-    let mut allocator = make_allocator(LIMIT_HEAP);
+    let mut allocator = make_allocator(ConsensusFlags::LIMIT_HEAP);
 
     let refs = block_refs.into_iter().map(|b| {
         let buf = b
@@ -244,7 +239,7 @@ pub fn get_puzzle_and_solution_for_coin2<'a>(
     let generator = node_from_bytes_backrefs(&mut allocator, generator.as_ref())
         .map_err(|e| map_pyerr_w_ptr(&e, &allocator))?;
     let args = setup_generator_args(&mut allocator, refs, flags)?;
-    let dialect = &ChiaDialect::new(flags);
+    let dialect = &ChiaDialect::new(flags.to_clvm_flags());
 
     let (puzzle, solution) = py
         .detach(|| -> Result<(NodePtr, NodePtr), EvalErr> {
@@ -407,7 +402,7 @@ fn supports_fast_forward(spend: &CoinSpend) -> bool {
         amount: spend.coin.amount,
     };
 
-    let mut a = make_allocator(LIMIT_HEAP);
+    let mut a = make_allocator(ConsensusFlags::LIMIT_HEAP);
     let Ok(puzzle) = node_from_bytes(&mut a, spend.puzzle_reveal.as_slice()) else {
         return false;
     };
@@ -433,7 +428,7 @@ fn fast_forward_singleton<'p>(
     new_coin: &Coin,
     new_parent: &Coin,
 ) -> PyResult<Bound<'p, PyBytes>> {
-    let mut a = make_allocator(LIMIT_HEAP);
+    let mut a = make_allocator(ConsensusFlags::LIMIT_HEAP);
     let puzzle = node_from_bytes(&mut a, spend.puzzle_reveal.as_slice())
         .map_err(|e| map_pyerr_w_ptr(&e, &a))?;
     let solution =
@@ -456,7 +451,7 @@ pub fn py_validate_clvm_and_signature(
     new_spend: &SpendBundle,
     max_cost: u64,
     constants: &ConsensusConstants,
-    flags: u32,
+    flags: ConsensusFlags,
 ) -> PyResult<(OwnedSpendBundleConditions, Vec<([u8; 32], GTElement)>, f32)> {
     let start_time = Instant::now();
     let (owned_conditions, additions) =
@@ -475,7 +470,7 @@ pub fn py_get_conditions_from_spendbundle(
 ) -> PyResult<OwnedSpendBundleConditions> {
     use chia_consensus::allocator::make_allocator;
     use chia_consensus::owned_conditions::OwnedSpendBundleConditions;
-    let mut a = make_allocator(LIMIT_HEAP);
+    let mut a = make_allocator(ConsensusFlags::LIMIT_HEAP);
     let conditions =
         get_conditions_from_spendbundle(&mut a, spend_bundle, max_cost, prev_tx_height, constants)?;
     Ok(OwnedSpendBundleConditions::from(&a, conditions))
@@ -487,7 +482,7 @@ pub fn py_get_flags_for_height_and_constants(
     prev_tx_height: u32,
     constants: &ConsensusConstants,
 ) -> u32 {
-    get_flags_for_height_and_constants(prev_tx_height, constants)
+    get_flags_for_height_and_constants(prev_tx_height, constants).bits()
 }
 
 #[pyo3::pyfunction]
@@ -552,7 +547,7 @@ pub fn get_spends_for_trusted_block<'a>(
     constants: &ConsensusConstants,
     generator: Program,
     block_refs: &Bound<'_, PyList>,
-    flags: u32,
+    flags: ConsensusFlags,
 ) -> pyo3::PyResult<Py<PyAny>> {
     let refs = block_refs
         .into_iter()
@@ -578,7 +573,7 @@ pub fn get_spends_for_trusted_block_with_conditions<'a>(
     constants: &ConsensusConstants,
     generator: Program,
     block_refs: &Bound<'a, PyList>,
-    flags: u32,
+    flags: ConsensusFlags,
 ) -> pyo3::PyResult<Py<PyAny>> {
     let refs = block_refs
         .into_iter()
@@ -820,16 +815,38 @@ pub fn chia_rs(py: Python<'_>, m: &Bound<'_, PyModule>) -> PyResult<()> {
     m.add_function(wrap_pyfunction!(compute_plot_id_v1, m)?)?;
     m.add_function(wrap_pyfunction!(compute_plot_id_v2, m)?)?;
 
-    // clvm functions
-    m.add("NO_UNKNOWN_CONDS", NO_UNKNOWN_CONDS)?;
-    m.add("STRICT_ARGS_COUNT", STRICT_ARGS_COUNT)?;
-    m.add("MEMPOOL_MODE", MEMPOOL_MODE)?;
-    m.add("DONT_VALIDATE_SIGNATURE", DONT_VALIDATE_SIGNATURE)?;
-    m.add("COMPUTE_FINGERPRINT", COMPUTE_FINGERPRINT)?;
-    m.add("COST_CONDITIONS", COST_CONDITIONS)?;
-    m.add("SIMPLE_GENERATOR", SIMPLE_GENERATOR)?;
-    m.add("DISABLE_OP", DISABLE_OP)?;
-    m.add("CANONICAL_INTS", CANONICAL_INTS)?;
+    // flags affecting consensus
+    m.add("NO_UNKNOWN_CONDS", ConsensusFlags::NO_UNKNOWN_CONDS.bits())?;
+    m.add(
+        "STRICT_ARGS_COUNT",
+        ConsensusFlags::STRICT_ARGS_COUNT.bits(),
+    )?;
+    m.add("MEMPOOL_MODE", MEMPOOL_MODE.bits())?;
+    m.add(
+        "DONT_VALIDATE_SIGNATURE",
+        ConsensusFlags::DONT_VALIDATE_SIGNATURE.bits(),
+    )?;
+    m.add(
+        "COMPUTE_FINGERPRINT",
+        ConsensusFlags::COMPUTE_FINGERPRINT.bits(),
+    )?;
+    m.add("COST_CONDITIONS", ConsensusFlags::COST_CONDITIONS.bits())?;
+    m.add("SIMPLE_GENERATOR", ConsensusFlags::SIMPLE_GENERATOR.bits())?;
+    m.add("DISABLE_OP", ConsensusFlags::DISABLE_OP.bits())?;
+    m.add("CANONICAL_INTS", ConsensusFlags::CANONICAL_INTS.bits())?;
+
+    // flags from clvm_rs, affecting execution
+    m.add_function(wrap_pyfunction!(run_chia_program, m)?)?;
+    m.add("NO_UNKNOWN_OPS", ConsensusFlags::NO_UNKNOWN_OPS.bits())?;
+    m.add("LIMIT_HEAP", ConsensusFlags::LIMIT_HEAP.bits())?;
+    m.add(
+        "ENABLE_KECCAK_OPS_OUTSIDE_GUARD",
+        ConsensusFlags::ENABLE_KECCAK_OPS_OUTSIDE_GUARD.bits(),
+    )?;
+    m.add(
+        "ENABLE_SHA256_TREE",
+        ConsensusFlags::ENABLE_SHA256_TREE.bits(),
+    )?;
 
     m.add_class::<PyPlotParam>()?;
 
@@ -957,17 +974,6 @@ pub fn chia_rs(py: Python<'_>, m: &Bound<'_, PyModule>) -> PyResult<()> {
     m.add_class::<FeeRate>()?;
     m.add_class::<LazyNode>()?;
     m.add_class::<Message>()?;
-
-    // facilities from clvm_rs
-
-    m.add_function(wrap_pyfunction!(run_chia_program, m)?)?;
-    m.add("NO_UNKNOWN_OPS", NO_UNKNOWN_OPS)?;
-    m.add("LIMIT_HEAP", LIMIT_HEAP)?;
-    m.add(
-        "ENABLE_KECCAK_OPS_OUTSIDE_GUARD",
-        ENABLE_KECCAK_OPS_OUTSIDE_GUARD,
-    )?;
-    m.add("ENABLE_SHA256_TREE", ENABLE_SHA256_TREE)?;
 
     m.add_function(wrap_pyfunction!(serialized_length, m)?)?;
     m.add_function(wrap_pyfunction!(serialized_length_trusted, m)?)?;

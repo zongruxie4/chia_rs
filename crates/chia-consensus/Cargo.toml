@@ -20,6 +20,7 @@ py-bindings = [
 ]
 
 [dependencies]
+bitflags = { workspace = true }
 clvmr = { workspace = true }
 hex = { workspace = true }
 pyo3 = { workspace = true, optional = true }

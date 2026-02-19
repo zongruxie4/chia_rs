@@ -4,7 +4,7 @@ use chia_protocol::Coin;
 use chia_protocol::{Bytes32, SpendBundle};
 use clvm_traits::FromClvm;
 use clvmr::op_utils::{first, rest};
-use clvmr::{Allocator, NodePtr};
+use clvmr::{Allocator, ClvmFlags, NodePtr};
 use libfuzzer_sys::{Corpus, fuzz_target};
 use std::collections::HashSet;
 
@@ -22,7 +22,7 @@ fuzz_target!(|bundle: SpendBundle| -> Corpus {
     for cs in &bundle.coin_spends {
         let (cost, mut conds) = cs
             .puzzle_reveal
-            .run(&mut a, 0, 11_000_000_000, &cs.solution)
+            .run(&mut a, ClvmFlags::empty(), 11_000_000_000, &cs.solution)
             .expect("run");
         total_cost += cost;
 
