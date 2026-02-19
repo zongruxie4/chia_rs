@@ -733,6 +733,27 @@ pub fn solve_proof(fragments: &PartialProof, plot_id: Bytes32, strength: u8, k: 
     )
 }
 
+/// Converts full proof bytes to quality string (does not validate the proof).
+/// Returns the serialized quality string, or None if proof format is invalid.
+#[pyo3::pyfunction]
+pub fn quality_string_from_proof(
+    plot_id: Bytes32,
+    size: u8,
+    plot_strength: u8,
+    proof: &[u8],
+) -> Option<Bytes32> {
+    chia_pos2::quality_string_from_proof(&plot_id.to_bytes(), size, plot_strength, proof).map(
+        |quality| -> Bytes32 {
+            let mut sha256 = Sha256::new();
+            sha256.update(chia_pos2::serialize_quality(
+                &quality.chain_links,
+                plot_strength,
+            ));
+            sha256.finalize().into()
+        },
+    )
+}
+
 #[pymodule]
 pub fn chia_rs(py: Python<'_>, m: &Bound<'_, PyModule>) -> PyResult<()> {
     // generator functions
@@ -766,6 +787,7 @@ pub fn chia_rs(py: Python<'_>, m: &Bound<'_, PyModule>) -> PyResult<()> {
     m.add_function(wrap_pyfunction!(create_v2_plot, m)?)?;
     m.add_function(wrap_pyfunction!(validate_proof_v2, m)?)?;
     m.add_function(wrap_pyfunction!(solve_proof, m)?)?;
+    m.add_function(wrap_pyfunction!(quality_string_from_proof, m)?)?;
     m.add_class::<Prover>()?;
     m.add_class::<PartialProof>()?;
 
