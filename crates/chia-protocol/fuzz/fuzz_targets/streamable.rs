@@ -41,7 +41,9 @@ fn test<'a, T: Arbitrary<'a> + Streamable + std::fmt::Debug + PartialEq>(data: &
     test_streamable(&obj);
 
     // ensure parsing from garbage bytes doesn't crash or panic
-    let _ = Foliage::from_bytes(data);
+    if let Ok(obj) = T::from_bytes(data) {
+        let _ = obj.hash();
+    }
 }
 
 fuzz_target!(|data: &[u8]| {
