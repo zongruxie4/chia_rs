@@ -832,21 +832,23 @@ pub fn chia_rs(py: Python<'_>, m: &Bound<'_, PyModule>) -> PyResult<()> {
     )?;
     m.add("COST_CONDITIONS", ConsensusFlags::COST_CONDITIONS.bits())?;
     m.add("SIMPLE_GENERATOR", ConsensusFlags::SIMPLE_GENERATOR.bits())?;
-    m.add("DISABLE_OP", ConsensusFlags::DISABLE_OP.bits())?;
-    m.add("CANONICAL_INTS", ConsensusFlags::CANONICAL_INTS.bits())?;
 
     // flags from clvm_rs, affecting execution
     m.add_function(wrap_pyfunction!(run_chia_program, m)?)?;
+    m.add("CANONICAL_INTS", ConsensusFlags::CANONICAL_INTS.bits())?;
     m.add("NO_UNKNOWN_OPS", ConsensusFlags::NO_UNKNOWN_OPS.bits())?;
     m.add("LIMIT_HEAP", ConsensusFlags::LIMIT_HEAP.bits())?;
+    m.add("RELAXED_BLS", ConsensusFlags::RELAXED_BLS.bits())?;
     m.add(
         "ENABLE_KECCAK_OPS_OUTSIDE_GUARD",
         ConsensusFlags::ENABLE_KECCAK_OPS_OUTSIDE_GUARD.bits(),
     )?;
+    m.add("DISABLE_OP", ConsensusFlags::DISABLE_OP.bits())?;
     m.add(
         "ENABLE_SHA256_TREE",
         ConsensusFlags::ENABLE_SHA256_TREE.bits(),
     )?;
+    m.add("ENABLE_SECP_OPS", ConsensusFlags::ENABLE_SECP_OPS.bits())?;
 
     m.add_class::<PyPlotParam>()?;
 
