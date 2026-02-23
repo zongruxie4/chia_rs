@@ -102,11 +102,9 @@ pub fn compute_plot_id_v2(
     meta_group: u8,
 ) -> Bytes32 {
     let mut ctx = Sha256::new();
-    // plot_group_id = sha256( 2 + strength + plot_pk + (pool_pk | contract_ph) )
+    // plot_group_id = sha256( strength + plot_pk + (pool_pk | contract_ph) )
     // plot_id = sha256( plot_group_id + plot_index + meta_group)
-    let version = 2_u8;
     let mut group_ctx = Sha256::new();
-    version.update_digest(&mut group_ctx);
     strength.update_digest(&mut group_ctx);
     plot_pk.update_digest(&mut group_ctx);
     if let Some(pool_pk) = pool_pk {
@@ -370,10 +368,10 @@ mod tests {
     }
 
     #[rstest]
-    #[case(0, 0, 0, "pool_pk", hex!("d2d7c5e9e2955b33cf99058fc8ac0706b284d81768ce19e789bbbdd42eb9f6a1"))]
-    #[case(10, 256, 7, "pool_pk", hex!("b9fa5318770889a8ab4af143e9dac806b98e1033a128d3f50d18579c6cb78e9f"))]
-    #[case(0, 0, 0, "contract_ph", hex!("7390a21f1793f0920d698662194a1c5311c8ae2dd96c89778f86d88bbeb069e1"))]
-    #[case(5, 100, 3, "contract_ph", hex!("fa5462dd1c20194027119600d5eae77de1283cff97efb49522f563fa2f5608ec"))]
+    #[case(0, 0, 0, "pool_pk", hex!("d3692a5d4fbfe1061053d4afada80d8f0b58b87b46c170e7087716a72091def0"))]
+    #[case(10, 256, 7, "pool_pk", hex!("2316eadc21d38c4e8740eb9efd49a0c2014a5b1ef992f5ae0b2d1fda01a4b034"))]
+    #[case(0, 0, 0, "contract_ph", hex!("03b09cab4bfdbcd1e626d93888a72f002d3948459c23cde52e9dd8d72dd9ae04"))]
+    #[case(5, 100, 3, "contract_ph", hex!("d575860c249ace41a656fe0d97719127f839fae55e6c32ffd7743b5a8a2eae4d"))]
     fn test_compute_plot_id_v2(
         #[case] strength: u8,
         #[case] plot_index: u16,
