@@ -1,5 +1,6 @@
 import pytest
 from chia_rs.sized_ints import uint8, uint16
+from chia_rs.sized_bytes import bytes32
 
 from chia_rs import (
     G1Element,
@@ -13,7 +14,7 @@ def test_proof_of_space() -> None:
     # version 1
     pos = ProofOfSpace(
         challenge,
-        None,
+        G1Element(),
         None,
         G1Element(),
         uint8(0),
@@ -38,7 +39,7 @@ def test_proof_of_space() -> None:
     # version 2
     pos = ProofOfSpace(
         challenge,
-        None,
+        G1Element(),
         None,
         G1Element(),
         uint8(1),
@@ -57,3 +58,51 @@ def test_proof_of_space() -> None:
     assert pos2.strength == 3
 
     assert pos2.size == 0
+
+    # version 2, invalid
+    pos = ProofOfSpace(
+        challenge,
+        None,  ## neither of pool_pk or puzzle hash set
+        None,
+        G1Element(),
+        uint8(1),
+        uint16(1),
+        uint8(2),
+        uint8(3),
+        uint8(4),
+        bytes.fromhex("80"),
+    )
+    buffer = bytes(pos)
+    with pytest.raises(ValueError, match="Invalid ProofOfSpace"):
+        pos2, consumed = ProofOfSpace.parse_rust(buffer)
+
+    pos = ProofOfSpace(
+        challenge,
+        G1Element(),  # both pool_pk and puzzle hash set
+        bytes32.random(),
+        G1Element(),
+        uint8(1),
+        uint16(1),
+        uint8(2),
+        uint8(3),
+        uint8(4),
+        bytes.fromhex("80"),
+    )
+    buffer = bytes(pos)
+    with pytest.raises(ValueError, match="Invalid ProofOfSpace"):
+        pos2, consumed = ProofOfSpace.parse_rust(buffer)
+
+    pos = ProofOfSpace(
+        challenge,
+        G1Element(),
+        None,
+        G1Element(),
+        uint8(2),  # invalid version
+        uint16(1),
+        uint8(2),
+        uint8(3),
+        uint8(4),
+        bytes.fromhex("80"),
+    )
+    with pytest.raises(ValueError, match="Invalid ProofOfSpace"):
+        buffer = bytes(pos)

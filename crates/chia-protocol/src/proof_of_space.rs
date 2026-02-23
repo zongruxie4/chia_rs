@@ -270,7 +270,7 @@ impl Streamable for ProofOfSpace {
             self.meta_group.stream(out)?;
             self.strength.stream(out)?;
         } else {
-            return Err(Error::InvalidPoSVersion);
+            return Err(Error::InvalidPoS);
         }
 
         self.proof.stream(out)
@@ -306,11 +306,15 @@ impl Streamable for ProofOfSpace {
                 size,
                 proof,
             })
-        } else {
+        } else if version == 1 {
             let plot_index = <u16 as Streamable>::parse::<TRUSTED>(input)?;
             let meta_group = <u8 as Streamable>::parse::<TRUSTED>(input)?;
             let strength = <u8 as Streamable>::parse::<TRUSTED>(input)?;
             let proof = <Bytes as Streamable>::parse::<TRUSTED>(input)?;
+
+            if pool_public_key.is_some() == pool_contract_puzzle_hash.is_some() {
+                return Err(Error::InvalidPoS);
+            }
 
             Ok(ProofOfSpace {
                 challenge,
@@ -324,6 +328,8 @@ impl Streamable for ProofOfSpace {
                 size: 0,
                 proof,
             })
+        } else {
+            Err(Error::InvalidPoS)
         }
     }
 }
@@ -469,11 +475,11 @@ mod tests {
     #[case(1, 18, Ok(0))]
     #[case(1, 28, Ok(0))]
     #[case(1, 38, Ok(0))]
-    #[case(2, 18, Err(Error::InvalidPoSVersion))]
+    #[case(2, 18, Err(Error::InvalidPoS))]
     fn proof_of_space_size(#[case] version: u8, #[case] size: u8, #[case] expect: Result<u8>) {
         let pos = ProofOfSpace::new(
             Bytes32::from(b"abababababababababababababababab"),
-            None,
+            Some(G1Element::default()),
             None,
             G1Element::default(),
             version,
