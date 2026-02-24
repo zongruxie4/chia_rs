@@ -1268,6 +1268,7 @@ impl MerkleBlob {
         Ok(merkle_blob)
     }
 
+    #[allow(clippy::too_many_arguments)]
     fn inner_build_blob_from_node_list(
         &mut self,
         nodes: &NodeHashToDeltaReaderNode,
