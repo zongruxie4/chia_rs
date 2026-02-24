@@ -1689,7 +1689,7 @@ mod tests {
     #[test]
     fn test_inner_build_blob_from_node_list_depth_limit() {
         let mut nodes = NodeHashToDeltaReaderNode::new();
-        let internal_hashes: Vec<Hash> = (0..=65).map(|i| generate_hash(i)).collect();
+        let internal_hashes: Vec<Hash> = (0..=65).map(generate_hash).collect();
 
         for d in 0..=64usize {
             let right_leaf_hash = generate_hash(10_000 + d as i32);
