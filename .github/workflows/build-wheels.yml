@@ -421,6 +421,7 @@ jobs:
           flag-name: ${{ join(matrix.*.name, ' ') }}
           parallel: true
           path-to-lcov: "./lcov.info"
+          fail-on-error: false
 
   unit_tests_done:
     name: Unit Tests - Done
@@ -434,6 +435,7 @@ jobs:
           COVERALLS_REPO_TOKEN: ${{ secrets.COVERALLS_REPO_TOKEN }}
         with:
           parallel-finished: true
+          fail-on-error: false
 
   upload:
     name: Upload to PyPI - ${{ matrix.os.name }} ${{ matrix.python.major-dot-minor }} ${{ matrix.arch.name }}
