@@ -9,7 +9,6 @@ use chia_consensus::consensus_constants::TEST_CONSTANTS;
 use chia_consensus::flags::{ConsensusFlags, MEMPOOL_MODE};
 use chia_consensus::run_block_generator::{run_block_generator, run_block_generator2};
 use chia_tools::iterate_blocks;
-use clvmr::Allocator;
 
 /// Analyze the blocks in a chia blockchain database
 #[derive(Parser, Debug)]
@@ -42,7 +41,7 @@ fn main() {
     let flags = if args.mempool_mode {
         MEMPOOL_MODE
     } else {
-        ConsensusFlags::empty()
+        ConsensusFlags::LIMIT_HEAP
     } | ConsensusFlags::DONT_VALIDATE_SIGNATURE;
 
     let num_cores = args
@@ -75,8 +74,7 @@ fn main() {
             }
             let output = output.clone();
             pool.execute(move || {
-                // after the hard fork, we run blocks without paying for the
-                // CLVM generator ROM
+                // after the hard fork, we run blocks without paying for the CLVM generator ROM
                 let block_runner = if height >= TEST_CONSTANTS.hard_fork_height {
                     run_block_generator2
                 } else {
@@ -94,11 +92,9 @@ fn main() {
                     .foliage_transaction_block
                     .expect("foliage_transaction_block");
 
-                let mut a = Allocator::new_limited(500_000_000);
-
                 let start_run_block = Instant::now();
-                let conditions = block_runner(
-                    &mut a,
+
+                let (a, conditions) = block_runner(
                     generator,
                     &block_refs,
                     ti.cost,
