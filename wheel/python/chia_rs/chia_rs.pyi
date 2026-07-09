@@ -4707,9 +4707,9 @@ class ConsensusConstants:
     PLOT_FILTER_32_HEIGHT: uint32
     MIN_PLOT_STRENGTH: uint8
     MAX_PLOT_STRENGTH: uint8
-    PLOT_FILTER_V2_FIRST_ADJUSTMENT_HEIGHT: uint32
-    PLOT_FILTER_V2_SECOND_ADJUSTMENT_HEIGHT: uint32
-    PLOT_FILTER_V2_THIRD_ADJUSTMENT_HEIGHT: uint32
+    PLOT_FILTER_V2_RELATIVE_HEIGHT: list[uint32]
+    FILTER_WINDOW_SIZE: uint8
+    MAX_EFFECTIVE_PLOT_FILTER_BITS: uint8
     TESTNET: bool
     def __new__(
         cls,
@@ -4765,9 +4765,9 @@ class ConsensusConstants:
         PLOT_FILTER_32_HEIGHT: uint32,
         MIN_PLOT_STRENGTH: uint8,
         MAX_PLOT_STRENGTH: uint8,
-        PLOT_FILTER_V2_FIRST_ADJUSTMENT_HEIGHT: uint32,
-        PLOT_FILTER_V2_SECOND_ADJUSTMENT_HEIGHT: uint32,
-        PLOT_FILTER_V2_THIRD_ADJUSTMENT_HEIGHT: uint32,
+        PLOT_FILTER_V2_RELATIVE_HEIGHT: Sequence[uint32],
+        FILTER_WINDOW_SIZE: uint8,
+        MAX_EFFECTIVE_PLOT_FILTER_BITS: uint8,
         TESTNET: bool
     ) -> Self: ...
     def __hash__(self) -> int: ...
@@ -4839,8 +4839,8 @@ class ConsensusConstants:
         PLOT_FILTER_32_HEIGHT: Union[ uint32, _Unspec] = _Unspec(),
         MIN_PLOT_STRENGTH: Union[ uint8, _Unspec] = _Unspec(),
         MAX_PLOT_STRENGTH: Union[ uint8, _Unspec] = _Unspec(),
-        PLOT_FILTER_V2_FIRST_ADJUSTMENT_HEIGHT: Union[ uint32, _Unspec] = _Unspec(),
-        PLOT_FILTER_V2_SECOND_ADJUSTMENT_HEIGHT: Union[ uint32, _Unspec] = _Unspec(),
-        PLOT_FILTER_V2_THIRD_ADJUSTMENT_HEIGHT: Union[ uint32, _Unspec] = _Unspec(),
+        PLOT_FILTER_V2_RELATIVE_HEIGHT: Union[ list[uint32], _Unspec] = _Unspec(),
+        FILTER_WINDOW_SIZE: Union[ uint8, _Unspec] = _Unspec(),
+        MAX_EFFECTIVE_PLOT_FILTER_BITS: Union[ uint8, _Unspec] = _Unspec(),
         TESTNET: Union[ bool, _Unspec] = _Unspec()) -> ConsensusConstants: ...
     def truncate(self, field: str, length: int) -> None: ...
